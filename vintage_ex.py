@@ -15,6 +15,7 @@ class VintageExPromptCommand(sublime_plugin.WindowCommand):
 
 class VintageExRunCommand(sublime_plugin.WindowCommand):
     def run(self, cmd):
+        [cmd, *args] = cmd.split('/')
         {
             ":only": lambda: self.close_other_tabs(),
             ":w":    lambda: self.save(),
@@ -27,7 +28,30 @@ class VintageExRunCommand(sublime_plugin.WindowCommand):
             ":sp":   lambda: self.split(),
             ":vsp":  lambda: self.vertical_split(),
             ":e":    lambda: self.edit(),
+            ":%s":   lambda: self.find_and_replace(args),
         }.get(cmd,   lambda: self.invalid_command(cmd))()
+
+    def find_and_replace(self, args):
+        # TODO: Parse and apply options.
+        [find_string, replace_string, *opts] = args
+        self.window.run_command(
+            "show_panel", {
+                "panel": "replace",
+                "reverse": False,
+                "regex": True,
+                "case_sensitive": True,
+                "whole_word": False ,
+                "in_selection": False,
+                "wrap": True,
+                "highlight_matches": True
+            }
+        )
+
+        # Inserts the text to find
+        self.window.run_command('insert', {'characters': find_string})
+
+        # Additional command to insert the text to replace?
+        # ???
 
     def reset_split(self):
         view = self.window.active_view()
@@ -110,7 +134,6 @@ class VintageExRunCommand(sublime_plugin.WindowCommand):
 
     def invalid_command(self, cmd):
         sublime.status_message("ERR - UNKNOWN COMMAND - " + cmd)
-
 
 # Jumps back and forth between the previous and next cursor positions,
 # similarly to vim's bultin backtick-backtick command.
