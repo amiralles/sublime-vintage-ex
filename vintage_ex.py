@@ -1,17 +1,7 @@
 import sublime, sublime_plugin
 import os
+import re
 from pathlib import Path
-
-# This file combines *vintage_ex*, *mru*, and *favorites* plugins.
-
-# TODO:
-# * Extract methods into "support_files" class and reuse them for MRU
-#   and Favorites (Tons of overlap there.)
-#
-# * Add setting for:
-#     - [MRU] Exclude extensions
-#     - [MRU] Set Max number of entries
-#     - [MRU] Make MRU behaves user wide (same as vim-mru)
 
 class VintageExPromptCommand(sublime_plugin.WindowCommand):
     def run(self):
@@ -40,10 +30,31 @@ class VintageExRunCommand(sublime_plugin.WindowCommand):
             ":sp":   lambda: self.split(),
             ":vsp":  lambda: self.vertical_split(),
             ":e":    lambda: self.edit(),
-            # ":%s":   lambda: self.find_and_replace(args),
             ":mru":  lambda: self.mru(),
             ":clear_mru":  lambda: self.clear_mru(),
-        }.get(cmd,   lambda: self.invalid_command(cmd))()
+            # ":%s":   lambda: self.find_and_replace(args),
+        }.get(cmd,   lambda: self.goto_line_or_invalid_command(cmd))()
+
+    def goto_line_or_invalid_command(self, cmd):
+        if cmd:
+            maybe_line_number = cmd[1:]
+            ok, line = self.try_parse_line_number(maybe_line_number)
+            if ok:
+                self.goto_line(line)
+            else:
+                self.invalid_command(cmd)
+
+    def goto_line(self, line_number):
+        view = self.window.active_view()
+        if view:
+            self.window.run_command("goto_line", {'line': line_number})
+
+    def try_parse_line_number(self, string):
+        try:
+            line_number = int(string)
+            return True, line_number
+        except ValueError:
+            return False, "Not a valid line number."
 
     def mru(self):
          self.window.run_command("mru")
@@ -52,7 +63,6 @@ class VintageExRunCommand(sublime_plugin.WindowCommand):
          self.window.run_command("mru_clear")
 
     # TODO: Find a way to set "replace_with" text.
-    #       (It seems that there is no easy way to do this)
     # def find_and_replace(self, args):
     #     # TODO: Parse and apply options.
     #     [find, replace, *opts] = args
@@ -74,7 +84,6 @@ class VintageExRunCommand(sublime_plugin.WindowCommand):
     def reset_split(self):
         view = self.window.active_view()
         if view:
-            # Maybe open the current file in the split tab, too...
             file_name = view.file_name()
             self.window.run_command(
                 "set_layout", {
@@ -87,7 +96,6 @@ class VintageExRunCommand(sublime_plugin.WindowCommand):
     def vertical_split(self):
         view = self.window.active_view()
         if view:
-            # Maybe open the current file in the split tab, too...
             file_name = view.file_name()
             self.window.run_command(
                 "set_layout", {
@@ -100,7 +108,6 @@ class VintageExRunCommand(sublime_plugin.WindowCommand):
     def split(self):
         view = self.window.active_view()
         if view:
-            # Maybe open the current file in the split tab, too...
             file_name = view.file_name()
             self.window.run_command(
                 "set_layout", {
