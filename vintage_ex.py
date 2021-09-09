@@ -164,6 +164,36 @@ class VintageExRunCommand(sublime_plugin.WindowCommand):
     def invalid_command(self, cmd):
         sublime.status_message("ERR - UNKNOWN COMMAND - " + cmd)
 
+# This command allows us to quickly jump to the testing file
+# in projects that follow Elixir's naming conventions.
+class JumpToExTestFileCommand(sublime_plugin.WindowCommand):
+    def run(self):
+        if self.can_jump_to_active_file_test():
+            self.window.open_file(self.test_file_name())
+        else:
+            print()
+            print("Can't jump to test file: {}".format(self.test_file_name()))
+
+    def can_jump_to_active_file_test(self):
+        return self.active_file_extension() == ".ex" and \
+            Path(self.test_file_name()).is_file()
+
+    def active_file_extension(self):
+        *_, ext = self.window.active_view().file_name().split(".")
+        return f".{ext}"
+
+    def test_file_name(self):
+        return os.path.join(self.test_path(), self.test_name())
+
+    def test_path(self):
+        path = re.sub("/lib/", "/test/", self.window.active_view().file_name())
+        return os.path.dirname(path)
+
+    def test_name(self):
+        basename = os.path.basename(self.window.active_view().file_name())
+        name, _ = basename.split(".")
+        return f"{name}_test.exs"
+
 # Jumps back and forth between the previous and next cursor positions,
 # similarly to vim's bultin backtick-backtick command.
 class BackticksJumpCommand(sublime_plugin.WindowCommand):
