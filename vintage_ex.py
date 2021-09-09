@@ -21,6 +21,7 @@ class VintageExRunCommand(sublime_plugin.WindowCommand):
         {
             ":only": lambda: self.close_other_tabs(),
             ":w":    lambda: self.save(),
+            ":wa":   lambda: self.save_all(),
             ":wq":   lambda: self.save_and_close(self.window.active_view()),
             ":wqa":  lambda: self.save_and_close_all(),
             ":q":    lambda: self.close(self.window.active_view()),
@@ -131,6 +132,9 @@ class VintageExRunCommand(sublime_plugin.WindowCommand):
             view.run_command("save")
             view.close()
             self.switch_to_normal_mode()
+
+    def save_all(self):
+        self.window.run_command("save_all")
 
     def discard_changes_and_close_all(self):
         [self.discard_changes_and_close(v) for v in self.window.views()]
