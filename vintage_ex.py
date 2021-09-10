@@ -166,13 +166,17 @@ class VintageExRunCommand(sublime_plugin.WindowCommand):
 
 # This command allows us to quickly jump to the testing file
 # in projects that follow Elixir's naming conventions.
+# TODO: Make it so it can find the test file even when the directory structure
+# doesn't match the lib/test convention.
+# 1. Try with full path
+# 2. Try finding the file anywhere inside the *test* dir of the
+#    current project.
 class JumpToExTestFileCommand(sublime_plugin.WindowCommand):
     def run(self):
         if self.can_jump_to_active_file_test():
             self.window.open_file(self.test_file_name())
         else:
-            print()
-            print("Can't jump to test file: {}".format(self.test_file_name()))
+            sublime.status_message("ERR - No test file :/")
 
     def can_jump_to_active_file_test(self):
         return self.active_file_extension() == ".ex" and \
@@ -273,7 +277,7 @@ class Mru():
     # Returns a string in the form of:
     # foo.txt (/Users/jane/tmp/foo.txt)
     def describe_file(self, file_path):
-        return os.path.basename(file_path) + " (" + self.project_relative_path(file_path) + ")"
+        return os.path.basename(file_path) + " - (" + self.project_relative_path(file_path) + ")"
 
     def mru_file_exists(self):
         full_path = self.mru_file_fullpath()
