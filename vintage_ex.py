@@ -227,8 +227,9 @@ class BackticksJumpCommand(sublime_plugin.WindowCommand):
 
 # This setting affects the number of entries we *show* on the quick panel. It
 # has no effect on the number of entries we store.
-MRU_QUICK_PANEL_MAX_ENTRIES = 30
-MRU_QUICK_PANEL_MAX_PATH_DISPLAY_LEN = 120
+MRU_MAX_ENTRIES = 30
+MRU_MAX_FILE_NAME_WIDTH = 45
+MRU_MAX_PATH_DISPLAY_LEN = 120
 MRU_FILE_NAME = ".sublime-mru"
 MRU_NO_FILES_MSG = "There are no recently used files."
 
@@ -275,9 +276,14 @@ class Mru():
                     f.write(file_path + os.linesep)
 
     # Returns a string in the form of:
-    # foo.txt (/Users/jane/tmp/foo.txt)
+    # foo.txt  | /Users/jane/tmp/
+    # bar.txt  | /Users/jane/tmp/
     def describe_file(self, file_path):
-        return os.path.basename(file_path) + " - (" + self.project_relative_path(file_path) + ")"
+        relevant_dir_names = self.project_relative_path(file_path).split("/")[:3]
+        relevant_dirs_path = "/".join(relevant_dir_names)
+
+        formatted_file_name = os.path.basename(file_path).ljust(MRU_MAX_FILE_NAME_WIDTH, " ")
+        return f"{formatted_file_name} | {relevant_dirs_path}"
 
     def mru_file_exists(self):
         full_path = self.mru_file_fullpath()
@@ -285,7 +291,7 @@ class Mru():
             return True
 
     def project_relative_path(self, file_path):
-        return file_path.replace(self.current_project_path() + "/", "")[:MRU_QUICK_PANEL_MAX_PATH_DISPLAY_LEN]
+        return file_path.replace(self.current_project_path() + "/", "")[:MRU_MAX_PATH_DISPLAY_LEN]
 
     def mru_file_fullpath(self):
         home = os.path.expanduser("~")
@@ -308,7 +314,7 @@ class MruCommand(sublime_plugin.WindowCommand, Mru):
         if len(files_descriptions) > 0:
             items = [x["file_description"] for x in files_descriptions]
             self.window.show_quick_panel(
-                items=items[:MRU_QUICK_PANEL_MAX_ENTRIES],
+                items=items[:MRU_MAX_ENTRIES],
                 on_select=lambda idx: self.open_file(files_descriptions, idx))
         else:
             print(MRU_NO_FILES_MSG)
