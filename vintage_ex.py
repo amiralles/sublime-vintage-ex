@@ -234,6 +234,36 @@ MRU_FILE_NAME = ".sublime-mru"
 MRU_NO_FILES_MSG = "There are no recently used files."
 
 class Mru():
+    def describe_current_project_mru_files(self):
+        return [d for d in self.describe_mru_files() if self.is_current_project_file(d["full_path"])]
+
+    def is_current_project_file(self, file_path):
+        return self.current_project_path() in file_path
+
+    def current_project_path(self):
+        folders = self.window.folders()
+        return folders[0] if len(folders) > 0 else ""
+
+    def largest_file_name_in_current_project(self):
+        largest_file_name = ""
+        for file_path in self.mru_files_in_current_project():
+            file_name = os.path.basename(file_path)
+            if len(file_name) > len(largest_file_name):
+                largest_file_name = file_name
+        return largest_file_name
+
+    def mru_files_in_current_project(self):
+        with open(self.mru_file_fullpath(), "r") as file:
+            files = []
+            for index, line in enumerate(file, start=1):
+                if index > MRU_MAX_ENTRIES:
+                    return files
+
+                file_path = line.strip()
+                if self.is_current_project_file(file_path):
+                    files.insert(len(files) - 1, file_path)
+            return files
+
     # Returns a list of key value pairs for each entry in the MRU file
     # where the *key* is the caption we use for the quick_panel and *value*
     # is the absolute file path that allows us to open the selected item.
@@ -282,7 +312,11 @@ class Mru():
         relevant_dir_names = self.project_relative_path(file_path).split("/")[:3]
         relevant_dirs_path = "/".join(relevant_dir_names)
 
-        formatted_file_name = os.path.basename(file_path).ljust(MRU_MAX_FILE_NAME_WIDTH, " ")
+        pad_size = len(self.largest_file_name_in_current_project())
+        if (pad_size > MRU_MAX_FILE_NAME_WIDTH):
+            pad_size = MRU_MAX_ENTRIES
+
+        formatted_file_name = os.path.basename(file_path).ljust(pad_size, " ")
         return f"{formatted_file_name} | {relevant_dirs_path}"
 
     def mru_file_exists(self):
@@ -318,16 +352,6 @@ class MruCommand(sublime_plugin.WindowCommand, Mru):
                 on_select=lambda idx: self.open_file(files_descriptions, idx))
         else:
             print(MRU_NO_FILES_MSG)
-
-    def describe_current_project_mru_files(self):
-        return [d for d in self.describe_mru_files() if self.is_current_project_file(d["full_path"])]
-
-    def is_current_project_file(self, file_path):
-        return self.current_project_path() in file_path
-
-    def current_project_path(self):
-        folders = self.window.folders()
-        return folders[0] if len(folders) > 0 else ""
 
     def open_file(self, mru_files, idx):
         if idx >= 0:
