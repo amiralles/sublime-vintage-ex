@@ -33,6 +33,7 @@ class VintageExRunCommand(sublime_plugin.WindowCommand):
             ":e":    lambda: self.edit(),
             ":mru":  lambda: self.mru(),
             ":clear_mru":  lambda: self.clear_mru(),
+            ":remru":  lambda: self.clear_mru(),
             # ":%s":   lambda: self.find_and_replace(args),
         }.get(cmd,   lambda: self.goto_line_or_invalid_command(cmd))()
 
@@ -306,8 +307,8 @@ class Mru():
                     f.write(file_path + os.linesep)
 
     # Returns a string in the form of:
-    # foo.txt  | /Users/jane/tmp/
-    # bar.txt  | /Users/jane/tmp/
+    # foo.txt  | /Users/jane/tmp/foo.txt
+    # bar.txt  | /Users/jane/tmp/bar.txt
     def describe_file(self, file_path):
         relevant_dir_names = self.project_relative_path(file_path).split("/")[:3]
         relevant_dirs_path = "/".join(relevant_dir_names)
@@ -317,7 +318,7 @@ class Mru():
             pad_size = MRU_MAX_ENTRIES
 
         formatted_file_name = os.path.basename(file_path).ljust(pad_size, " ")
-        return f"{formatted_file_name} | {relevant_dirs_path}"
+        return f"{formatted_file_name} | {relevant_dirs_path}/{formatted_file_name}"
 
     def mru_file_exists(self):
         full_path = self.mru_file_fullpath()
