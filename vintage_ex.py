@@ -17,7 +17,7 @@ class VintageExPromptCommand(sublime_plugin.WindowCommand):
 
 class VintageExRunCommand(sublime_plugin.WindowCommand):
     def run(self, cmd):
-        [cmd, *args] = cmd.split('/')
+        [cmd, *args] = cmd.split('!')
         {
             ":only": lambda: self.close_other_tabs(),
             ":w":    lambda: self.save(),
@@ -34,6 +34,7 @@ class VintageExRunCommand(sublime_plugin.WindowCommand):
             ":mru":  lambda: self.mru(),
             ":clear_mru":  lambda: self.clear_mru(),
             ":remru":  lambda: self.clear_mru(),
+            ":":  lambda: self.open_terminus(args),
             # ":%s":   lambda: self.find_and_replace(args),
         }.get(cmd,   lambda: self.goto_line_or_invalid_command(cmd))()
 
@@ -63,6 +64,10 @@ class VintageExRunCommand(sublime_plugin.WindowCommand):
 
     def clear_mru(self):
          self.window.run_command("mru_clear")
+
+    def open_terminus(self, args):
+        cwd = self.window.extract_variables()['folder']
+        self.window.run_command("terminus_open", {"cwd": cwd})
 
     # TODO: Find a way to set "replace_with" text.
     # def find_and_replace(self, args):
@@ -307,18 +312,18 @@ class Mru():
                     f.write(file_path + os.linesep)
 
     # Returns a string in the form of:
-    # foo.txt  | /Users/jane/tmp/foo.txt
-    # bar.txt  | /Users/jane/tmp/bar.txt
+    # file name | dir name
+    # foo.txt   | tmp
+    # bar.txt   | bin
     def describe_file(self, file_path):
-        relevant_dir_names = self.project_relative_path(file_path).split("/")[:3]
-        relevant_dirs_path = "/".join(relevant_dir_names)
+        dir_name = self.project_relative_path(file_path).split("/")[-2]
 
         pad_size = len(self.largest_file_name_in_current_project())
         if (pad_size > MRU_MAX_FILE_NAME_WIDTH):
             pad_size = MRU_MAX_ENTRIES
 
         formatted_file_name = os.path.basename(file_path).ljust(pad_size, " ")
-        return f"{formatted_file_name} | {relevant_dirs_path}/{formatted_file_name}"
+        return f"{formatted_file_name} | {dir_name}"
 
     def mru_file_exists(self):
         full_path = self.mru_file_fullpath()
