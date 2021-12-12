@@ -1,6 +1,7 @@
 # Sublime VintageEx
 Sublime Text plugin that adds additional vim commands on top of the Vintage package.
 
+_(It also includes my [vim MRU](https://github.com/amiralles/sublime-mru) clone package.)_
 
 https://user-images.githubusercontent.com/2120820/128536078-fcc6adbd-f8fe-4ad2-9685-2e67fb303fdd.mp4
 
